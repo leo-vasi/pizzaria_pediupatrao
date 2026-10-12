@@ -1,0 +1,10 @@
+/target/
+/build/
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+nbactions*.xml
+.env
