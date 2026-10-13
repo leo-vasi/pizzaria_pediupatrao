@@ -3,7 +3,7 @@ package com.umc.pediupatrao.service;
 import com.umc.pediupatrao.entity.Role;
 import com.umc.pediupatrao.entity.Usuario;
 import com.umc.pediupatrao.repository.UsuarioRepository;
-import com.umc.pediupatrao.security.CurrentUser;
+import com.umc.pediupatrao.security.UsuarioLogado;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -103,7 +103,7 @@ public class UsuarioService {
     }
 
     private boolean isCurrentUser(Usuario usuario) {
-        return CurrentUser.username()
+        return UsuarioLogado.username()
                 .map(username -> username.equals(usuario.getUsername()))
                 .orElse(false);
     }
