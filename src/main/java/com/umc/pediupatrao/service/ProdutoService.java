@@ -5,6 +5,7 @@ import com.umc.pediupatrao.repository.ProdutoRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Service
 public class ProdutoService {
@@ -12,21 +13,25 @@ public class ProdutoService {
     @Autowired
     private ProdutoRepository produtoRepository;
 
+    @PreAuthorize("hasRole('GERENTE')")
     public Produto novoProduto(Produto produto) {
         return produtoRepository.save(produto);
     }
 
+    @PreAuthorize("isAuthenticated()")
     public List<Produto> listarProdutos() {
         return produtoRepository.findAll();
     }
 
     // Método para excluir cliente
+    @PreAuthorize("hasRole('GERENTE')")
     public void excluir(String id) {
         produtoRepository.deleteById(id);
     }
 
 
     // Método para salvar um novo cliente ou atualizar um cliente existente
+    @PreAuthorize("hasRole('GERENTE')")
     public Produto salvar(Produto produto) {
         // Se o cliente não tem ID (novo cliente), salva como novo
         if (produto.getId() == null) {
