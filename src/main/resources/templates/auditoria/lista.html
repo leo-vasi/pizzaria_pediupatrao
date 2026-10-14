@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Auditoria</title>
+</head>
+<body>
+
+<div th:fragment="content">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-journal-text me-2 text-primary"></i>Auditoria
+        </h2>
+
+        <!-- Filtro por entidade -->
+        <form th:action="@{/auditoria}" method="get" class="d-flex gap-2">
+            <select name="entidade" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="" th:selected="${entidade == null or entidade == ''}">Todas as entidades</option>
+                <option value="Pedido" th:selected="${entidade == 'Pedido'}">Pedidos</option>
+                <option value="Cliente" th:selected="${entidade == 'Cliente'}">Clientes</option>
+            </select>
+        </form>
+    </div>
+
+    <p class="text-muted small">
+        <i class="bi bi-lock-fill me-1"></i>
+        Registros somente leitura. Telefones exibidos parcialmente mascarados.
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">Data e hora</th>
+                        <th>Usuário</th>
+                        <th>Operação</th>
+                        <th>Entidade</th>
+                        <th>Alterações</th>
+                        <th>Justificativa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(logs)}">
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            Nenhum registro de auditoria.
+                        </td>
+                    </tr>
+                    <tr th:each="log : ${logs}">
+                        <td class="ps-4 text-nowrap" th:text="${log.dataHora}"></td>
+                        <td>
+                            <span class="fw-medium" th:text="${log.username}"></span><br>
+                            <span class="badge bg-secondary" th:text="${log.role}"></span>
+                        </td>
+                        <td><span class="badge bg-info text-dark" th:text="${log.rotuloOperacao}"></span></td>
+                        <td>
+                            <span th:text="${log.tipoEntidade}"></span><br>
+                            <code class="small" th:text="${log.entidadeId}"></code>
+                        </td>
+                        <td>
+                            <span class="text-muted" th:if="${#lists.isEmpty(log.alteracoes)}">-</span>
+                            <table class="table table-sm table-borderless mb-0 small" th:unless="${#lists.isEmpty(log.alteracoes)}">
+                                <thead>
+                                    <tr class="text-muted">
+                                        <th>Campo</th>
+                                        <th>Valor anterior</th>
+                                        <th>Novo valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="c : ${log.alteracoes}">
+                                        <td class="fw-medium" th:text="${c.campo}"></td>
+                                        <td class="text-danger" th:text="${c.valorAnterior} ?: '(vazio)'"></td>
+                                        <td class="text-success" th:text="${c.valorNovo} ?: '(vazio)'"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                        <td th:text="${log.justificativa} ?: '-'"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small" th:if="${!#lists.isEmpty(logs)}">
+            Total: <strong th:text="${#lists.size(logs)}"></strong> registro(s)
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

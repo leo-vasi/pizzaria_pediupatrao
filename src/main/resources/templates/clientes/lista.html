@@ -14,6 +14,18 @@
         </a>
     </div>
 
+    <!-- Mensagens de feedback -->
+    <div class="alert alert-success alert-dismissible fade show" th:if="${sucesso}" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${sucesso}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div class="alert alert-danger alert-dismissible fade show" th:if="${erro}" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${erro}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
     <!-- Tabela de clientes -->
     <div class="card shadow-sm">
         <div class="card-body p-0">
@@ -87,10 +99,12 @@
 
         async function excluirCliente(id) {
             if (confirm('Tem certeza que deseja excluir este cliente?')) {
-                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE', headers: csrfHeaders() });
                 if (response.ok) {
                     alert('Cliente excluído com sucesso!');
                     carregarClientes();
+                } else if (response.status === 403) {
+                    alert('Acesso negado: somente o GERENTE pode excluir clientes.');
                 } else {
                     alert('Erro ao excluir o cliente.');
                 }

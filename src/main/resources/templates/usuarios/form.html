@@ -66,8 +66,7 @@
                     </label>
                     <select id="role" class="form-select" th:field="*{role}" required>
                         <option value="" disabled>Selecione um perfil</option>
-                        <option value="ADMIN">ADMIN</option>
-                        <option value="USER">USER</option>
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="${r}"></option>
                     </select>
                 </div>
 
