@@ -33,6 +33,15 @@ public class ProdutoService {
     // Método para salvar um novo cliente ou atualizar um cliente existente
     @PreAuthorize("hasRole('GERENTE')")
     public Produto salvar(Produto produto) {
+        if (produto.getNome() == null || produto.getNome().isBlank()) {
+            throw new IllegalArgumentException("Informe o nome do produto.");
+        }
+        if (produto.getPreco() == null || produto.getPreco() <= 0) {
+            throw new IllegalArgumentException("Informe um preço maior que zero.");
+        }
+        if (produto.getId() != null && produto.getId().isBlank()) {
+            produto.setId(null);
+        }
         // Se o cliente não tem ID (novo cliente), salva como novo
         if (produto.getId() == null) {
             return produtoRepository.save(produto);  // Cria um novo cliente
