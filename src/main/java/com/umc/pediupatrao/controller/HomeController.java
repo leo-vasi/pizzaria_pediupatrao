@@ -106,7 +106,6 @@ public class HomeController {
             RedirectAttributes redirectAttributes) {
         try {
             usuarioService.atualizarUsuario(id, usuario);
-
             redirectAttributes.addFlashAttribute("sucesso", "Usuário atualizado com sucesso!");
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
             redirectAttributes.addFlashAttribute("erro", e.getMessage());
@@ -172,8 +171,12 @@ public class HomeController {
     @PostMapping("/clientes/salvar")
     public String salvarCliente(@ModelAttribute Cliente cliente,
             RedirectAttributes redirectAttributes) {
-        clienteService.salvar(cliente);
-        redirectAttributes.addFlashAttribute("sucesso", "Cliente criado com sucesso!");
+        try {
+            clienteService.salvar(cliente);
+            redirectAttributes.addFlashAttribute("sucesso", "Cliente criado com sucesso!");
+        } catch (IllegalArgumentException | NoSuchElementException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
         return "redirect:/clientes";
     }
 
@@ -199,8 +202,12 @@ public class HomeController {
             @ModelAttribute Cliente cliente,
             RedirectAttributes redirectAttributes) {
         cliente.setId(id);
-        clienteService.salvar(cliente);
-        redirectAttributes.addFlashAttribute("sucesso", "Cliente atualizado com sucesso!");
+        try {
+            clienteService.salvar(cliente);
+            redirectAttributes.addFlashAttribute("sucesso", "Cliente atualizado com sucesso!");
+        } catch (IllegalArgumentException | NoSuchElementException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
         return "redirect:/clientes";
     }
 

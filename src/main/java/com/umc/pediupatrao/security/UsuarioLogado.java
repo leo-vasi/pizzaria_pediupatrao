@@ -6,7 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
-// Ferramenta para ler quem está logado a partir do SecurityContext sem precisar injetar Authentication em cada serviço/controller.
+// Ferramenta para ler quem está logado a partir do SecurityContext sem precisar injetar Authentication em cada service/controller.
 public final class UsuarioLogado {
 
     private static final String ROLE_PREFIX = "ROLE_";
