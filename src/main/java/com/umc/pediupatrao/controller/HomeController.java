@@ -3,12 +3,10 @@ package com.umc.pediupatrao.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.umc.pediupatrao.entity.Cliente;
-import com.umc.pediupatrao.entity.Pedido;
 import com.umc.pediupatrao.entity.Produto;
 import com.umc.pediupatrao.entity.Role;
 import com.umc.pediupatrao.entity.Usuario;
 import com.umc.pediupatrao.service.ClienteService;
-import com.umc.pediupatrao.service.PedidoService;
 import com.umc.pediupatrao.service.ProdutoService;
 import com.umc.pediupatrao.service.UsuarioService;
 import java.util.List;
@@ -26,9 +24,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class HomeController {
 
     private static final Logger log = LoggerFactory.getLogger(HomeController.class);
-
-    @Autowired
-    private PedidoService pedidoService;
 
     @Autowired
     private ClienteService clienteService;
@@ -128,14 +123,6 @@ public class HomeController {
     // ========================
     // PEDIDOS
     // ========================
-    @GetMapping("/pedidos")
-    public String pedidos(Model model) {
-        List<Pedido> pedidos = pedidoService.listarPedidos();
-        model.addAttribute("pedidos", pedidos);
-        model.addAttribute("content", "pedidos :: content");
-        log.info("Carregando fragmento: pedidos :: content");
-        return "layout";
-    }
 
     // ========================
     // PRODUTOS
@@ -147,6 +134,27 @@ public class HomeController {
         model.addAttribute("content", "produtos/lista :: content");
         log.info("Carregando fragmento: produtos/lista :: content");
         return "layout";
+    }
+
+    @PostMapping("/produtos/salvar")
+    public String salvarProduto(@ModelAttribute Produto produto,
+            RedirectAttributes redirectAttributes) {
+        try {
+            produto.setAtivo(Boolean.TRUE.equals(produto.getAtivo()));
+            produtoService.salvar(produto);
+            redirectAttributes.addFlashAttribute("sucesso", "Produto salvo com sucesso!");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("erro", e.getMessage());
+        }
+        return "redirect:/produtos";
+    }
+
+    @PostMapping("/produtos/{id}/excluir")
+    public String excluirProduto(@PathVariable String id,
+            RedirectAttributes redirectAttributes) {
+        produtoService.excluir(id);
+        redirectAttributes.addFlashAttribute("sucesso", "Produto excluído com sucesso!");
+        return "redirect:/produtos";
     }
 
     // ========================

@@ -1,67 +1,57 @@
 package com.umc.pediupatrao.entity;
 
-import jakarta.persistence.Entity;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+// Pedido. Todos os valores são calculados pelo PedidoService no servidor:
+// as requisições HTTP mandam apenas cliente, produtos e quantidades
+// (veja CriarPedidoRequest).
 @Document(collection = "pedidos")
-@Entity
+@Getter
+@Setter
 public class Pedido {
+
     @Id
     private String id;
     private String clienteId;
-    private String tipoPizza;
-    private String status;
-    private int quantidade;
-    private String sabor;
+    private String nomeCliente;
 
-    public String getId() {
-        return id;
-    }
+    private StatusPedido status;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    // Itens e valores
+    private List<ItemPedido> itens = new ArrayList<>();
+    private BigDecimal subtotal = BigDecimal.ZERO;
+    private BigDecimal percentualDesconto = BigDecimal.ZERO;
+    private BigDecimal valorDesconto = BigDecimal.ZERO;
+    private BigDecimal total = BigDecimal.ZERO;
 
-    public String getClienteId() {
-        return clienteId;
-    }
+    // Entrada (RECEBIDO)
+    private LocalDateTime criadoEm;
+    private String criadoPor;
 
-    public void setClienteId(String clienteId) {
-        this.clienteId = clienteId;
-    }
+    // Saída (SAIU_PARA_ENTREGA ou RETIRADO)
+    private LocalDateTime saidaEm;
+    private String saidaPor;
 
-    public String getTipoPizza() {
-        return tipoPizza;
-    }
+    // Conclusão (FINALIZADO)
+    private LocalDateTime finalizadoEm;
+    private String finalizadoPor;
 
-    public void setTipoPizza(String tipoPizza) {
-        this.tipoPizza = tipoPizza;
-    }
+    // Desconto (só GERENTE)
+    private LocalDateTime descontoAplicadoEm;
+    private String descontoAplicadoPor;
 
-    public String getStatus() {
-        return status;
-    }
+    // Cancelamento (só GERENTE)
+    private LocalDateTime canceladoEm;
+    private String canceladoPor;
+    private String motivoCancelamento;
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public int getQuantidade() {
-        return quantidade;
-    }
-
-    public void setQuantidade(int quantidade) {
-        this.quantidade = quantidade;
-    }
-
-    public String getSabor() {
-        return sabor;
-    }
-
-    public void setSabor(String sabor) {
-        this.sabor = sabor;
-    }
-    
-    
+    private List<AlteracaoStatus> historicoStatus = new ArrayList<>();
 }

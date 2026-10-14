@@ -72,6 +72,7 @@ public class SecurityConfig {
                         .requestMatchers("/pedidos/*/cancelar", "/pedidos/*/desconto",
                                 "/api/pedidos/*/cancelar", "/api/pedidos/*/desconto").hasRole(GERENTE)
                         // Pedidos, aqui todo mundo vê, mas só GERENTE e ATENDENTE registram e movimentam
+                        .requestMatchers("/pedidos/novo").hasAnyRole(GERENTE, ATENDENTE)
                         .requestMatchers(HttpMethod.GET, "/pedidos/**", "/api/pedidos/**").hasAnyRole(ADMIN, GERENTE, ATENDENTE)
                         .requestMatchers("/pedidos/**", "/api/pedidos/**").hasAnyRole(GERENTE, ATENDENTE)
 
