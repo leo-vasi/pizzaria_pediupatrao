@@ -27,6 +27,7 @@ services:
       MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/?authSource=admin
       MONGODB_DATABASE: ${MONGO_DATABASE}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SEED_DEMO: ${SEED_DEMO:-false}
     ports:
       - "8080:8080"
 
