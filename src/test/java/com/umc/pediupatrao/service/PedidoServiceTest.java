@@ -208,7 +208,6 @@ class PedidoServiceTest {
     }
 
     //  metodos auxiliares
-
     private static Produto produto(String id, String nome, double preco) {
         Produto p = new Produto();
         p.setId(id);
@@ -223,7 +222,7 @@ class PedidoServiceTest {
         Pedido pedido = new Pedido();
         pedido.setId("o1");
         pedido.setStatus(status);
-        pedido.setItens(List.of(new ItemPedido("p1", "Pizza", 1, new BigDecimal("100.00"), new BigDecimal("100.00"))));
+        pedido.setItens(List.of(new ItemPedido("p1", "Pizza", 1, new BigDecimal("100.00"), new BigDecimal("100.00"), "Pizza")));
         PedidoService.recalcular(pedido);
         return pedido;
     }
