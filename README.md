@@ -255,13 +255,13 @@ Ambiente: `docker compose up --build` com `SEED_DEMO=true` e banco zerado.
 
 | # | Cenário | Perfil | Resultado esperado | Resultado obtido | Evidência |
 |---|---|---|---|---|---|
-| 1 | Abrir o dashboard | GERENTE | Indicadores, gráficos e ranking carregados | A preencher | Print 02 e vídeo |
-| 2 | Filtrar "Últimos 7 dias" | GERENTE | Componentes recalculados e variação exibida | A preencher | Vídeo |
-| 3 | Filtrar tipo "Pizza" | GERENTE | Ranking só com pizzas | A preencher | Vídeo |
-| 4 | Registrar um pedido e clicar em Atualizar | GERENTE | "Em andamento" e a rosca atualizados | A preencher | Vídeo |
-| 5 | `GET /api/dashboard/resumo` | GERENTE | `200` com JSON igual aos cartões | A preencher | Vídeo |
-| 6 | `GET /api/dashboard/resumo?dataInicio=2026-11-10&dataFim=2026-11-01` | GERENTE | `400` com mensagem | A preencher | Print 03 |
-| 7 | Abrir `/dashboard` | ATENDENTE | `403` e item ausente no menu | A preencher | Print 04 |
+| 1 | Abrir o dashboard | GERENTE | Indicadores, gráficos e ranking carregados | Conforme esperado | Print 02 e vídeo |
+| 2 | Filtrar "Últimos 7 dias" | GERENTE | Componentes recalculados e variação exibida | Conforme esperado | Vídeo |
+| 3 | Filtrar tipo "Pizza" | GERENTE | Ranking só com pizzas | Conforme esperado | Vídeo |
+| 4 | Registrar um pedido e clicar em Atualizar | GERENTE | "Em andamento" e a rosca atualizados | Conforme esperado | Vídeo |
+| 5 | `GET /api/dashboard/resumo` | GERENTE | `200` com JSON igual aos cartões | Conforme esperado | Vídeo |
+| 6 | `GET /api/dashboard/resumo?dataInicio=2026-11-10&dataFim=2026-11-01` | GERENTE | `400` com mensagem | Conforme esperado | Print 03 |
+| 7 | Abrir `/dashboard` | ATENDENTE | `403` e item ausente no menu | Conforme esperado | Print 04 |
 
 **Print 02: dashboard como GERENTE**
 
@@ -279,11 +279,9 @@ Ambiente: `docker compose up --build` com `SEED_DEMO=true` e banco zerado.
 
 | Branch | Conteúdo |
 |---|---|
-| `feature/dashboard` | Seed de demonstração, API integrada ao MongoDB, testes e tela com AdminLTE |
-| `docs/dashboard` | Este README |
+| `feature/dashboard` | Seed de demonstração, API integrada ao MongoDB, testes, tela com AdminLTE, este README e as evidências |
 
-Ambas integradas à `develop` por pull request e, ao final, a `develop` à `main`.
-
+Integrada à `develop` por pull request e, ao final, a `develop` à `main`.
 ```
 src/main/java/com/umc/pediupatrao
 ├── config/DadosDemonstracaoSeeder.java     Seed opcional de 30 dias de pedidos
