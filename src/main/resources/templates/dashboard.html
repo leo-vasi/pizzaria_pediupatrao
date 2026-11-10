@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pediu Patrão | Dashboard</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" th:href="@{/plugins/fontawesome-free/css/all.min.css}">
+    <link rel="stylesheet" th:href="@{/plugins/daterangepicker/daterangepicker.css}">
+    <link rel="stylesheet" th:href="@{/plugins/overlayScrollbars/css/OverlayScrollbars.min.css}">
+    <link rel="stylesheet" th:href="@{/dist/css/adminlte.min.css}">
+
+    <style>
+        .grafico { position: relative; height: 280px; }
+        .sem-dados {
+            position: absolute; inset: 0; display: none;
+            align-items: center; justify-content: center; color: #6c757d;
+        }
+        .small-box .variacao { font-size: .85rem; opacity: .9; }
+        .small-box h3 { font-size: 1.9rem; white-space: nowrap; }
+        .info-box .info-box-text { white-space: normal; }
+    </style>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+    <!-- Barra superior: menu, usuário logado e sair -->
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+            <li class="nav-item d-none d-sm-inline-block">
+                <a th:href="@{/}" class="nav-link">Voltar ao sistema</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav ml-auto align-items-center">
+            <li class="nav-item mr-3 text-muted small">
+                <i class="fas fa-user-circle mr-1"></i>
+                <strong sec:authentication="name"></strong>
+                <span class="badge badge-secondary ml-1" th:text="${currentRole}"></span>
+            </li>
+            <li class="nav-item">
+                <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Sair
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Menu lateral do AdminLTE, com os mesmos links e restrições do menu principal -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a th:href="@{/dashboard}" class="brand-link">
+            <i class="fas fa-pizza-slice brand-image ml-3 mt-1"></i>
+            <span class="brand-text font-weight-light">Pediu Patrão</span>
+        </a>
+        <div class="sidebar">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" role="menu">
+                    <li class="nav-item">
+                        <a th:href="@{/dashboard}" class="nav-link active">
+                            <i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/pedidos}" class="nav-link">
+                            <i class="nav-icon fas fa-shopping-bag"></i><p>Pedidos</p>
+                        </a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('GERENTE')">
+                        <a th:href="@{/clientes}" class="nav-link">
+                            <i class="nav-icon fas fa-users"></i><p>Clientes</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/produtos}" class="nav-link">
+                            <i class="nav-icon fas fa-boxes"></i><p>Produtos</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/auditoria}" class="nav-link">
+                            <i class="nav-icon fas fa-clipboard-list"></i><p>Auditoria</p>
+                        </a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                        <a th:href="@{/usuarios}" class="nav-link">
+                            <i class="nav-icon fas fa-user-cog"></i><p>Usuários</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/}" class="nav-link">
+                            <i class="nav-icon fas fa-arrow-left"></i><p>Voltar ao sistema</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <div class="content-wrapper">
+
+        <!-- Título, horário da última atualização e controles de atualização (RF07) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h1 class="m-0">Dashboard Administrativo</h1>
+                        <small class="text-muted" id="periodoDescricao">Carregando...</small>
+                    </div>
+                    <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                        <small class="text-muted mr-2" id="ultimaAtualizacao"></small>
+                        <div class="custom-control custom-switch d-inline-block mr-2">
+                            <input type="checkbox" class="custom-control-input" id="autoAtualizar" checked>
+                            <label class="custom-control-label" for="autoAtualizar">Atualizar a cada 60s</label>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" id="btnAtualizar">
+                            <i class="fas fa-sync-alt mr-1"></i>Atualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+
+                <!-- Filtros de consulta (RF05) -->
+                <div class="card card-outline card-primary">
+                    <div class="card-body py-2">
+                        <form id="formFiltros" class="form-row align-items-end">
+                            <div class="col-md-5 mb-2">
+                                <label for="periodo" class="small mb-1">Período</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" id="periodo" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label for="tipoProduto" class="small mb-1">Tipo de produto</label>
+                                <select id="tipoProduto" class="form-control form-control-sm">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fas fa-filter mr-1"></i>Aplicar
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnLimpar">
+                                    Limpar filtros
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Mensagem de erro (RF07) -->
+                <div class="alert alert-danger alert-dismissible" id="alertaErro" style="display:none;">
+                    <button type="button" class="close" onclick="esconderErro()">&times;</button>
+                    <i class="icon fas fa-exclamation-triangle"></i>
+                    <span id="mensagemErro"></span>
+                </div>
+
+                <!-- Indicadores principais (RF01) -->
+                <div class="row">
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-success">
+                            <div class="inner">
+                                <h3 id="kpiFaturamento">-</h3>
+                                <p>Faturamento</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-dollar-sign"></i></div>
+                            <div class="small-box-footer variacao" id="varFaturamento">&nbsp;</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3 id="kpiPedidos">-</h3>
+                                <p>Pedidos realizados</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-shopping-cart"></i></div>
+                            <div class="small-box-footer variacao" id="varPedidos">&nbsp;</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-primary">
+                            <div class="inner">
+                                <h3 id="kpiTicket">-</h3>
+                                <p>Ticket médio</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-receipt"></i></div>
+                            <div class="small-box-footer variacao" id="varTicket">&nbsp;</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-danger">
+                            <div class="inner">
+                                <h3 id="kpiCancelamento">-</h3>
+                                <p>Taxa de cancelamento</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-ban"></i></div>
+                            <div class="small-box-footer variacao">dos pedidos do período</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Indicadores secundários (RF01) -->
+                <div class="row">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-warning"><i class="fas fa-stopwatch"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Tempo médio até a saída</span>
+                                <span class="info-box-number" id="kpiTempo">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-secondary"><i class="fas fa-tags"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Descontos concedidos</span>
+                                <span class="info-box-number" id="kpiDescontos">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-indigo"><i class="fas fa-fire"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Pedidos em andamento agora</span>
+                                <span class="info-box-number" id="kpiAndamento">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-teal"><i class="fas fa-user-friends"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Clientes atendidos</span>
+                                <span class="info-box-number" id="kpiClientes">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análise de vendas (RF02) e situação dos pedidos (RF03) -->
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-line mr-1"></i>Faturamento por dia</h3></div>
+                            <div class="card-body">
+                                <div class="grafico">
+                                    <canvas id="graficoVendas"></canvas>
+                                    <div class="sem-dados" id="semDadosVendas">Nenhuma venda no período.</div>
+                                </div>
+                            </div>
+                            <div class="overlay" id="carregandoVendas"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-pie mr-1"></i>Pedidos por status</h3></div>
+                            <div class="card-body">
+                                <div class="grafico">
+                                    <canvas id="graficoStatus"></canvas>
+                                    <div class="sem-dados" id="semDadosStatus">Nenhum pedido no período.</div>
+                                </div>
+                            </div>
+                            <div class="overlay" id="carregandoStatus"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Horário de pico (RF02) e produtos mais vendidos (RF04) -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-clock mr-1"></i>Pedidos por hora do dia</h3></div>
+                            <div class="card-body">
+                                <div class="grafico">
+                                    <canvas id="graficoHoras"></canvas>
+                                    <div class="sem-dados" id="semDadosHoras">Nenhum pedido no período.</div>
+                                </div>
+                            </div>
+                            <div class="overlay" id="carregandoHoras"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-trophy mr-1"></i>Produtos mais vendidos</h3></div>
+                            <div class="card-body">
+                                <div class="grafico" style="height:180px;">
+                                    <canvas id="graficoProdutos"></canvas>
+                                    <div class="sem-dados" id="semDadosProdutos">Nenhum produto vendido no período.</div>
+                                </div>
+                                <table class="table table-sm mt-2 mb-0">
+                                    <thead>
+                                    <tr>
+                                        <th>#</th><th>Produto</th><th>Tipo</th>
+                                        <th class="text-right">Unidades</th><th class="text-right">Receita</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="tabelaProdutos"></tbody>
+                                </table>
+                            </div>
+                            <div class="overlay" id="carregandoProdutos"><i class="fas fa-2x fa-sync-alt fa-spin"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+
+    <footer class="main-footer small">
+        Pediu Patrão: dashboard administrativo. Dados carregados pela API <code>/api/dashboard</code>.
+    </footer>
+</div>
+
+<script th:src="@{/plugins/jquery/jquery.min.js}"></script>
+<script th:src="@{/plugins/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/plugins/moment/moment.min.js}"></script>
+<script th:src="@{/plugins/moment/locale/pt-br.js}"></script>
+<script th:src="@{/plugins/daterangepicker/daterangepicker.js}"></script>
+<script th:src="@{/plugins/chart.js/Chart.min.js}"></script>
+<script th:src="@{/dist/js/adminlte.min.js}"></script>
+
+<script>
+    // ===================== configuração =====================
+
+    const API = '/api/dashboard';
+    const INTERVALO_ATUALIZACAO_MS = 60000;
+    const DIAS_PADRAO = 30;
+
+    // Mesma cor para cada status em todo o sistema
+    const CORES_STATUS = {
+        RECEBIDO: '#6c757d', EM_PREPARACAO: '#ffc107', PRONTO: '#17a2b8',
+        SAIU_PARA_ENTREGA: '#007bff', RETIRADO: '#6610f2', FINALIZADO: '#28a745', CANCELADO: '#dc3545'
+    };
+
+    const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    const decimal1 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+    const graficos = {};
+    let filtro = { inicio: moment().subtract(DIAS_PADRAO - 1, 'days'), fim: moment(), tipoProduto: '' };
+    let timerAtualizacao = null;
+    let carregando = false;
+
+    moment.locale('pt-br');
+
+    // ===================== filtros (RF05) =====================
+
+    function configurarPeriodo() {
+        $('#periodo').daterangepicker({
+            startDate: filtro.inicio,
+            endDate: filtro.fim,
+            maxDate: moment(),
+            maxSpan: { days: 366 },
+            locale: {
+                format: 'DD/MM/YYYY', separator: ' até ', applyLabel: 'Aplicar', cancelLabel: 'Cancelar',
+                customRangeLabel: 'Personalizado', daysOfWeek: moment.weekdaysMin(), monthNames: moment.months(),
+                firstDay: 0
+            },
+            ranges: {
+                'Hoje': [moment(), moment()],
+                'Últimos 7 dias': [moment().subtract(6, 'days'), moment()],
+                'Últimos 30 dias': [moment().subtract(29, 'days'), moment()],
+                'Este mês': [moment().startOf('month'), moment()],
+                'Mês passado': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        }, (inicio, fim) => {
+            filtro.inicio = inicio;
+            filtro.fim = fim;
+        });
+    }
+
+    async function carregarTiposProduto() {
+        try {
+            const tipos = await buscar('/tipos-produto');
+            const select = document.getElementById('tipoProduto');
+            tipos.forEach(tipo => {
+                const opcao = document.createElement('option');
+                opcao.value = tipo;
+                opcao.textContent = tipo;
+                select.appendChild(opcao);
+            });
+        } catch (e) {
+            // Sem os tipos, o filtro fica só com "Todos"; o erro já foi exibido por buscar()
+        }
+    }
+
+    function parametros() {
+        const params = new URLSearchParams({
+            dataInicio: filtro.inicio.format('YYYY-MM-DD'),
+            dataFim: filtro.fim.format('YYYY-MM-DD')
+        });
+        if (filtro.tipoProduto) {
+            params.append('tipoProduto', filtro.tipoProduto);
+        }
+        return params.toString();
+    }
+
+    // ===================== integração com a API (RF06) e tratamento (RF07) =====================
+
+    async function buscar(caminho, extra) {
+        const separador = caminho.includes('?') ? '&' : '?';
+        const url = API + caminho + (extra === undefined ? '' : separador + extra);
+        const resposta = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+        if (resposta.status === 401) {
+            window.location.href = '/login'; // sessão expirada
+            throw new Error('Sessão expirada.');
+        }
+        if (!resposta.ok) {
+            let mensagem = 'Não foi possível carregar os dados (erro ' + resposta.status + ').';
+            try {
+                const corpo = await resposta.json();
+                if (corpo.message) mensagem = corpo.message;
+            } catch (e) { /* resposta sem JSON */ }
+            if (resposta.status === 403) mensagem = 'Seu perfil não tem acesso ao dashboard.';
+            throw new Error(mensagem);
+        }
+        return resposta.json();
+    }
+
+    async function atualizarDashboard() {
+        if (carregando) return;
+        carregando = true;
+        esconderErro();
+        mostrarCarregando(true);
+        document.getElementById('btnAtualizar').disabled = true;
+
+        const p = parametros();
+        try {
+            const [resumo, vendas, status, horas, produtos] = await Promise.all([
+                buscar('/resumo', p),
+                buscar('/vendas-por-dia', p),
+                buscar('/pedidos-por-status', p),
+                buscar('/pedidos-por-hora', p),
+                buscar('/produtos-mais-vendidos?limite=5', p)
+            ]);
+            exibirResumo(resumo);
+            exibirVendas(vendas);
+            exibirStatus(status);
+            exibirHoras(horas);
+            exibirProdutos(produtos);
+            document.getElementById('ultimaAtualizacao').textContent =
+                'Atualizado às ' + moment().format('HH:mm:ss');
+        } catch (e) {
+            mostrarErro(e.message);
+        } finally {
+            mostrarCarregando(false);
+            document.getElementById('btnAtualizar').disabled = false;
+            carregando = false;
+        }
+    }
+
+    function configurarAtualizacaoAutomatica() {
+        clearInterval(timerAtualizacao);
+        if (document.getElementById('autoAtualizar').checked) {
+            timerAtualizacao = setInterval(() => {
+                if (!document.hidden) atualizarDashboard(); // não consulta com a aba em segundo plano
+            }, INTERVALO_ATUALIZACAO_MS);
+        }
+    }
+
+    // ===================== exibição =====================
+
+    function exibirResumo(r) {
+        texto('kpiFaturamento', moeda.format(r.faturamento));
+        texto('kpiPedidos', r.pedidosRealizados);
+        texto('kpiTicket', moeda.format(r.ticketMedio));
+        texto('kpiCancelamento', decimal1.format(r.taxaCancelamento) + '%');
+        texto('kpiTempo', r.tempoMedioSaidaMinutos === null ? 'Sem saídas' : decimal1.format(r.tempoMedioSaidaMinutos) + ' min');
+        texto('kpiDescontos', moeda.format(r.descontosConcedidos));
+        texto('kpiAndamento', r.pedidosEmAndamento);
+        texto('kpiClientes', r.clientesAtendidos);
+
+        const v = r.variacao;
+        exibirVariacao('varFaturamento', v.faturamento);
+        exibirVariacao('varPedidos', v.pedidosRealizados);
+        exibirVariacao('varTicket', v.ticketMedio);
+
+        const p = r.periodo;
+        let descricao = moment(p.dataInicio).format('DD/MM/YYYY') + ' até ' + moment(p.dataFim).format('DD/MM/YYYY');
+        if (p.tipoProduto) descricao += ' · tipo: ' + p.tipoProduto;
+        texto('periodoDescricao', descricao);
+    }
+
+    function exibirVariacao(id, valor) {
+        const elemento = document.getElementById(id);
+        if (valor === null) {
+            elemento.textContent = 'sem base no período anterior';
+            return;
+        }
+        const seta = valor > 0 ? '▲' : (valor < 0 ? '▼' : '●');
+        const sinal = valor > 0 ? '+' : '';
+        elemento.textContent = seta + ' ' + sinal + decimal1.format(valor) + '% vs. período anterior';
+    }
+
+    function exibirVendas(vendas) {
+        const temDados = vendas.some(v => v.pedidos > 0);
+        desenhar('graficoVendas', 'semDadosVendas', temDados, {
+            type: 'line',
+            data: {
+                labels: vendas.map(v => moment(v.data).format('DD/MM')),
+                datasets: [{
+                    label: 'Faturamento', data: vendas.map(v => v.faturamento), yAxisID: 'valor',
+                    borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,.1)', pointRadius: 3, lineTension: .3
+                }, {
+                    label: 'Pedidos', data: vendas.map(v => v.pedidos), yAxisID: 'quantidade',
+                    borderColor: '#17a2b8', backgroundColor: 'transparent', borderDash: [4, 4], pointRadius: 2, lineTension: .3
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    yAxes: [
+                        { id: 'valor', position: 'left', ticks: { beginAtZero: true, callback: v => moeda.format(v) } },
+                        { id: 'quantidade', position: 'right', gridLines: { drawOnChartArea: false },
+                          ticks: { beginAtZero: true, precision: 0 } }
+                    ]
+                },
+                tooltips: {
+                    mode: 'index', intersect: false,
+                    callbacks: {
+                        label: (item, dados) => item.datasetIndex === 0
+                            ? 'Faturamento: ' + moeda.format(item.yLabel)
+                            : 'Pedidos: ' + item.yLabel
+                    }
+                }
+            }
+        });
+    }
+
+    function exibirStatus(lista) {
+        const comPedidos = lista.filter(s => s.quantidade > 0);
+        desenhar('graficoStatus', 'semDadosStatus', comPedidos.length > 0, {
+            type: 'doughnut',
+            data: {
+                labels: comPedidos.map(s => s.rotulo),
+                datasets: [{ data: comPedidos.map(s => s.quantidade), backgroundColor: comPedidos.map(s => CORES_STATUS[s.status]) }]
+            },
+            options: { maintainAspectRatio: false, legend: { position: 'bottom' } }
+        });
+    }
+
+    function exibirHoras(lista) {
+        // Mostra só a faixa de funcionamento com movimento, para o gráfico não ficar cheio de zeros
+        const comPedidos = lista.filter(h => h.pedidos > 0).map(h => h.hora);
+        const inicio = comPedidos.length ? Math.min(...comPedidos) : 0;
+        const fim = comPedidos.length ? Math.max(...comPedidos) : 23;
+        const faixa = lista.filter(h => h.hora >= inicio && h.hora <= fim);
+        const maximo = Math.max(...faixa.map(h => h.pedidos));
+
+        desenhar('graficoHoras', 'semDadosHoras', comPedidos.length > 0, {
+            type: 'bar',
+            data: {
+                labels: faixa.map(h => String(h.hora).padStart(2, '0') + 'h'),
+                datasets: [{
+                    label: 'Pedidos', data: faixa.map(h => h.pedidos),
+                    // Destaca o horário de pico
+                    backgroundColor: faixa.map(h => h.pedidos === maximo && maximo > 0 ? '#fd7e14' : '#6c757d')
+                }]
+            },
+            options: {
+                maintainAspectRatio: false, legend: { display: false },
+                scales: { yAxes: [{ ticks: { beginAtZero: true, precision: 0 } }] }
+            }
+        });
+    }
+
+    function exibirProdutos(ranking) {
+        desenhar('graficoProdutos', 'semDadosProdutos', ranking.length > 0, {
+            type: 'horizontalBar',
+            data: {
+                labels: ranking.map(p => p.nomeProduto),
+                datasets: [{ label: 'Unidades', data: ranking.map(p => p.quantidade), backgroundColor: '#007bff' }]
+            },
+            options: {
+                maintainAspectRatio: false, legend: { display: false },
+                scales: { xAxes: [{ ticks: { beginAtZero: true, precision: 0 } }] }
+            }
+        });
+
+        // Tabela montada com textContent: nomes vindos do banco nunca são interpretados como HTML
+        const corpo = document.getElementById('tabelaProdutos');
+        corpo.replaceChildren();
+        if (ranking.length === 0) {
+            const linha = corpo.insertRow();
+            const celula = linha.insertCell();
+            celula.colSpan = 5;
+            celula.className = 'text-center text-muted';
+            celula.textContent = 'Sem vendas no período.';
+            return;
+        }
+        ranking.forEach(p => {
+            const linha = corpo.insertRow();
+            [p.posicao + 'º', p.nomeProduto, p.tipoProduto, p.quantidade, moeda.format(p.receita)].forEach((valor, i) => {
+                const celula = linha.insertCell();
+                celula.textContent = valor;
+                if (i >= 3) celula.className = 'text-right';
+            });
+        });
+    }
+
+    // Cria o gráfico na primeira vez e só atualiza os dados nas próximas
+    function desenhar(idCanvas, idSemDados, temDados, configuracao) {
+        document.getElementById(idSemDados).style.display = temDados ? 'none' : 'flex';
+        document.getElementById(idCanvas).style.visibility = temDados ? 'visible' : 'hidden';
+
+        const atual = graficos[idCanvas];
+        if (atual) {
+            atual.data = configuracao.data;
+            atual.update();
+            return;
+        }
+        graficos[idCanvas] = new Chart(document.getElementById(idCanvas), configuracao);
+    }
+
+    // ===================== auxiliares =====================
+
+    function texto(id, valor) {
+        document.getElementById(id).textContent = valor;
+    }
+
+    function mostrarCarregando(ativo) {
+        ['carregandoVendas', 'carregandoStatus', 'carregandoHoras', 'carregandoProdutos'].forEach(id => {
+            document.getElementById(id).style.display = ativo ? 'flex' : 'none';
+        });
+    }
+
+    function mostrarErro(mensagem) {
+        document.getElementById('mensagemErro').textContent = mensagem;
+        document.getElementById('alertaErro').style.display = 'block';
+    }
+
+    function esconderErro() {
+        document.getElementById('alertaErro').style.display = 'none';
+    }
+
+    // ===================== inicialização =====================
+
+    document.getElementById('formFiltros').addEventListener('submit', evento => {
+        evento.preventDefault();
+        filtro.tipoProduto = document.getElementById('tipoProduto').value;
+        atualizarDashboard();
+    });
+
+    document.getElementById('btnLimpar').addEventListener('click', () => {
+        filtro = { inicio: moment().subtract(DIAS_PADRAO - 1, 'days'), fim: moment(), tipoProduto: '' };
+        document.getElementById('tipoProduto').value = '';
+        const seletor = $('#periodo').data('daterangepicker');
+        seletor.setStartDate(filtro.inicio);
+        seletor.setEndDate(filtro.fim);
+        atualizarDashboard();
+    });
+
+    document.getElementById('btnAtualizar').addEventListener('click', atualizarDashboard);
+    document.getElementById('autoAtualizar').addEventListener('change', configurarAtualizacaoAutomatica);
+
+    configurarPeriodo();
+    carregarTiposProduto();
+    atualizarDashboard();
+    configurarAtualizacaoAutomatica();
+</script>
+</body>
+</html>

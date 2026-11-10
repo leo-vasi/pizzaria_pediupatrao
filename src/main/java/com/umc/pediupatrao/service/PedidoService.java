@@ -52,8 +52,6 @@ public class PedidoService {
     @Autowired
     private AuditoriaService auditoriaService;
 
-    // ===================== RF02 criação =====================
-
     @PreAuthorize("hasAnyRole('GERENTE', 'ATENDENTE')")
     public Pedido criarPedido(CriarPedidoRequest request) {
         if (request == null || request.getClienteId() == null || request.getClienteId().isBlank()) {
@@ -120,11 +118,12 @@ public class PedidoService {
         // O preço vem SEMPRE do banco, nunca da requisição
         BigDecimal precoUnitario = BigDecimal.valueOf(produto.getPreco()).setScale(2, RoundingMode.HALF_UP);
         BigDecimal subtotal = precoUnitario.multiply(BigDecimal.valueOf(solicitado.getQuantidade())).setScale(2, RoundingMode.HALF_UP);
-        return new ItemPedido(produto.getId(), produto.getNome(), solicitado.getQuantidade(), precoUnitario, subtotal);
+        return new ItemPedido(produto.getId(), produto.getNome(), solicitado.getQuantidade(), precoUnitario, subtotal,
+                produto.getTipo());
     }
 
     // Recalcula subtotal, valor do desconto e total a partir dos itens e do desconto autorizado
-    static void recalcular(Pedido pedido) {
+    public static void recalcular(Pedido pedido) {
         BigDecimal subtotal = pedido.getItens().stream()
                 .map(ItemPedido::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)

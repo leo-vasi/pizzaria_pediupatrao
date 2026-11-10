@@ -17,4 +17,5 @@ public class ItemPedido {
     private int quantidade;
     private BigDecimal precoUnitario;
     private BigDecimal subtotal;
+    private String tipoProduto;
 }

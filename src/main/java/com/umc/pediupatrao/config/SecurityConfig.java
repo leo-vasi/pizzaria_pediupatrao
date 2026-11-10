@@ -68,6 +68,9 @@ public class SecurityConfig {
                         // Auditoria ADMIN e GERENTE podem consultar
                         .requestMatchers("/auditoria/**", "/api/auditoria/**").hasAnyRole(ADMIN, GERENTE)
 
+                        // Dashboard administrativo, somente leitura, para ADMIN e GERENTE
+                        .requestMatchers("/dashboard", "/dashboard/**", "/api/dashboard/**").hasAnyRole(ADMIN, GERENTE)
+
                         // Cancelar e dar desconto em pedido é só do GERENTE (nem ADMIN entra aqui)
                         .requestMatchers("/pedidos/*/cancelar", "/pedidos/*/desconto",
                                 "/api/pedidos/*/cancelar", "/api/pedidos/*/desconto").hasRole(GERENTE)
